@@ -3,7 +3,6 @@ package handlers
 import (
 	"awesomeProject3/internal/filter"
 	"awesomeProject3/models"
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -25,7 +24,6 @@ var filterParamsMu sync.Mutex
 var filterParams = make(map[int]models.FilterParams)
 
 func askFilterSearch(chatID int64, subID int) {
-	fmt.Println("asdasdaz")
 	setState(chatID, "filter_"+strconv.Itoa(subID)+"_"+stepFilterSearch)
 	msg := tgbotapi.NewMessage(chatID, "🔍 Введите текст поиска (или нажмите Пропустить):")
 	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(
@@ -146,7 +144,6 @@ func handleFilterStep(chatID int64, subID int, step, text string) bool {
 }
 
 func handleFilterSkip(chatID int64, subID int, step string) {
-	fmt.Println(step)
 	switch step {
 	case "search":
 		askFilterPriceMin(chatID, subID)

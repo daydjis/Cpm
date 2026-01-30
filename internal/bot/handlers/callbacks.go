@@ -4,7 +4,6 @@ import (
 	"awesomeProject3/internal/filter"
 	"awesomeProject3/internal/service"
 	"awesomeProject3/models"
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -17,7 +16,6 @@ func handleCallback(callback *tgbotapi.CallbackQuery) {
 		return
 	}
 	data := callback.Data
-	fmt.Println("Teas", data, len(data) >= 10, "data[:10]==", data[:10], data[:10] == "filter_pro")
 	switch {
 	case len(data) >= 10 && data[:10] == "subscribe_":
 		handleSubscribeCallback(callback, data[10:])
@@ -109,7 +107,6 @@ func handleFilterSkipCallback(callback *tgbotapi.CallbackQuery, suffix string) {
 
 func handleFilterProCallback(callback *tgbotapi.CallbackQuery, suffix string) {
 	idx := strings.Index(suffix, "_")
-	fmt.Println(suffix, idx)
 	if idx < 0 {
 		answerCallback(callback.ID, "Ошибка1")
 		return

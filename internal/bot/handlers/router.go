@@ -30,7 +30,6 @@ func HandleUpdates() {
 		msg := update.Message
 		chatID := msg.Chat.ID
 		text := msg.Text
-		fmt.Println("tea", text)
 		st := getState(chatID)
 		if strings.HasPrefix(st, "filter_") {
 			parts := strings.SplitN(st, "_", 4) // filter_<subID>_<step>
