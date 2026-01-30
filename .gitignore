@@ -1,0 +1,4 @@
+cmd/app/.env
+*.exe
+*.test
+vendor/

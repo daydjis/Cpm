@@ -1,0 +1,6 @@
+.git
+.idea
+.vscode
+cmd/app/.env
+bin
+tmp
