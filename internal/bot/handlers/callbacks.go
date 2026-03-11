@@ -17,17 +17,16 @@ func handleCallback(callback *tgbotapi.CallbackQuery) {
 	}
 	data := callback.Data
 	switch {
-	case len(data) >= 10 && data[:10] == "subscribe_":
-		handleSubscribeCallback(callback, data[10:])
-	case len(data) >= 12 && data[:12] == "unsubscribe_":
-		handleUnsubscribeCallback(callback, data[12:])
-	case len(data) >= 14 && data[:11] == "filters_yes":
-		handleFiltersChoiceCallback(callback, data[:14])
-
-	case len(data) >= 13 && data[:12] == "filter_skip_":
-		handleFilterSkipCallback(callback, data[11:])
-	case len(data) >= 10 && data[:10] == "filter_pro":
-		handleFilterProCallback(callback, data[10:])
+	case strings.HasPrefix(data, "subscribe_"):
+		handleSubscribeCallback(callback, strings.TrimPrefix(data, "subscribe_"))
+	case strings.HasPrefix(data, "unsubscribe_"):
+		handleUnsubscribeCallback(callback, strings.TrimPrefix(data, "unsubscribe_"))
+	case strings.HasPrefix(data, "filters_"):
+		handleFiltersChoiceCallback(callback, data)
+	case strings.HasPrefix(data, "filter_skip_"):
+		handleFilterSkipCallback(callback, data)
+	case strings.HasPrefix(data, "filter_pro_"):
+		handleFilterProCallback(callback, data)
 	default:
 		answerCallback(callback.ID, "Неизвестное действие")
 	}
@@ -65,9 +64,9 @@ func handleSubscribeCallback(callback *tgbotapi.CallbackQuery, idStr string) {
 	botSend(edit)
 }
 
-func handleFiltersChoiceCallback(callback *tgbotapi.CallbackQuery, suffix string) {
-
-	parts := strings.SplitN(suffix, "_", 3)
+func handleFiltersChoiceCallback(callback *tgbotapi.CallbackQuery, data string) {
+	// filters_yes_<subID> или filters_no_<subID>
+	parts := strings.SplitN(data, "_", 3)
 	if len(parts) != 3 {
 		answerCallback(callback.ID, "Ошибка")
 		return
@@ -88,13 +87,14 @@ func handleFiltersChoiceCallback(callback *tgbotapi.CallbackQuery, suffix string
 }
 
 func handleFilterSkipCallback(callback *tgbotapi.CallbackQuery, suffix string) {
-	parts := strings.SplitN(suffix, "_", 3)
+	// filter_skip_<subID>_<step>
+	parts := strings.SplitN(suffix, "_", 4)
 
-	if len(parts) != 3 {
+	if len(parts) != 4 {
 		answerCallback(callback.ID, "Ошибка")
 		return
 	}
-	subID, err := strconv.Atoi(parts[1])
+	subID, err := strconv.Atoi(parts[2])
 	if err != nil {
 		answerCallback(callback.ID, "Ошибка")
 		return
@@ -102,21 +102,22 @@ func handleFilterSkipCallback(callback *tgbotapi.CallbackQuery, suffix string) {
 	chatID := callback.Message.Chat.ID
 	answerCallback(callback.ID, "Пропущено")
 	clearState(chatID)
-	handleFilterSkip(chatID, subID, parts[2])
+	handleFilterSkip(chatID, subID, parts[3])
 }
 
 func handleFilterProCallback(callback *tgbotapi.CallbackQuery, suffix string) {
-	idx := strings.Index(suffix, "_")
-	if idx < 0 {
-		answerCallback(callback.ID, "Ошибка1")
+	// filter_pro_<subID>_<types>
+	parts := strings.SplitN(suffix, "_", 4)
+	if len(parts) != 4 {
+		answerCallback(callback.ID, "Ошибка")
 		return
 	}
-	subID, err := strconv.Atoi(strconv.Itoa(idx))
+	subID, err := strconv.Atoi(parts[2])
 	if err != nil {
-		answerCallback(callback.ID, "Ошибка2")
+		answerCallback(callback.ID, "Ошибка")
 		return
 	}
-	typesStr := suffix[idx+1:]
+	typesStr := parts[3]
 	types := filter.ParseProTypes(typesStr)
 	setFilterParam(subID, func(p *models.FilterParams) { p.ProTypes = types })
 	chatID := callback.Message.Chat.ID

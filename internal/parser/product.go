@@ -4,6 +4,7 @@ import (
 	"awesomeProject3/internal/db"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -35,28 +36,42 @@ func FetchAndSave(fullURL string, categoryID int, filterSignature string) {
 	}
 
 	doc.Find("div.product").Each(func(i int, s *goquery.Selection) {
-		name := strings.TrimSpace(s.Find("a.product_title").Text())
+		titleLink := s.Find("a.product_title")
+		name := strings.TrimSpace(titleLink.Text())
+		productHref, ok := titleLink.Attr("href")
+
 		price := strings.TrimSpace(s.Find("div.price").Text())
 		price = strings.ReplaceAll(price, "\u00a0", "")
 		price = strings.ReplaceAll(price, "e", "₽")
 
 		img := s.Find("a.img img")
 		imgSrc, exists := img.Attr("src")
-		if !exists || imgSrc == "" {
-			imgSrc = "https://minifreemarket.com/default.jpg"
-		} else if strings.HasPrefix(imgSrc, "/") {
-			imgSrc = "https://minifreemarket.com" + imgSrc
-		}
 
-		if name == "" || imgSrc == "" {
+		if name == "" || !ok || productHref == "" || !exists || imgSrc == "" {
 			return
 		}
 
-		_, err := db.DB.Exec(`
-			INSERT INTO notifications (category_id, item_name, item_url, filter_signature, sent_at)
-			VALUES ($1, $2, $3, $4, NULL)
+		// Приводим ссылки к абсолютным.
+		base, err := url.Parse("https://minifreemarket.com")
+		if err != nil {
+			return
+		}
+		productURL, err := url.Parse(productHref)
+		if err != nil {
+			return
+		}
+		imageURL, err := url.Parse(imgSrc)
+		if err != nil {
+			return
+		}
+		productURL = base.ResolveReference(productURL)
+		imageURL = base.ResolveReference(imageURL)
+
+		_, err = db.DB.Exec(`
+			INSERT INTO notifications (category_id, item_name, item_url, image_url, filter_signature, sent_at)
+			VALUES ($1, $2, $3, $4, $5, NULL)
 			ON CONFLICT (category_id, item_url, filter_signature) DO NOTHING
-		`, categoryID, name+" | "+price, imgSrc, filterSignature)
+		`, categoryID, name+" | "+price, productURL.String(), imageURL.String(), filterSignature)
 		if err != nil {
 			log.Println("DB insert error:", err, "for item:", name)
 		}

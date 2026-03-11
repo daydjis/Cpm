@@ -101,7 +101,6 @@ func clearFilterParams(subID int) {
 
 func finishFilterFlow(chatID int64, subID int) {
 	p := getFilterParams(subID)
-	_ = filter.BuildFilterSignature(p)
 	if err := svc.Subscription.UpdateFilters(subID, p); err != nil {
 		log.Println("UpdateFilters:", err)
 		botSend(tgbotapi.NewMessage(chatID, "Ошибка сохранения фильтров."))

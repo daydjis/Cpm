@@ -16,10 +16,18 @@ func NewNotificationRepository(db *sql.DB) *NotificationRepository {
 
 func (r *NotificationRepository) GetPending() ([]models.PendingNotification, error) {
 	rows, err := r.db.Query(`
-        SELECT n.id, n.category_id, n.item_name, n.item_url, s.user_id, u.telegram_id
+        SELECT n.id,
+               n.category_id,
+               c.name       AS category_name,
+               n.item_name,
+               n.item_url,
+               n.image_url,
+               s.user_id,
+               u.telegram_id
         FROM notifications n
         JOIN subscriptions s ON s.category_id = n.category_id AND s.filter_signature = n.filter_signature
-        JOIN users u ON u.id = s.user_id
+        JOIN categories   c ON c.id = n.category_id
+        JOIN users        u ON u.id = s.user_id
         LEFT JOIN notification_deliveries d ON d.notification_id = n.id AND d.user_id = s.user_id
         WHERE d.id IS NULL
         ORDER BY n.id
@@ -32,7 +40,7 @@ func (r *NotificationRepository) GetPending() ([]models.PendingNotification, err
 	var list []models.PendingNotification
 	for rows.Next() {
 		var n models.PendingNotification
-		if err := rows.Scan(&n.ID, &n.CategoryID, &n.ItemName, &n.ItemURL, &n.UserID, &n.TelegramID); err != nil {
+		if err := rows.Scan(&n.ID, &n.CategoryID, &n.CategoryName, &n.ItemName, &n.ItemURL, &n.ImageURL, &n.UserID, &n.TelegramID); err != nil {
 			log.Println("Scan error:", err)
 			continue
 		}

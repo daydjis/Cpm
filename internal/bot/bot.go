@@ -21,3 +21,9 @@ func Init() {
 	Bot.Debug = false
 	log.Printf("Authorized on account %s", Bot.Self.UserName)
 }
+
+func Stop() {
+	if Bot != nil {
+		Bot.StopReceivingUpdates()
+	}
+}
