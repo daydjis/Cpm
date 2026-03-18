@@ -4,6 +4,7 @@ import (
 	"awesomeProject3/models"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -87,16 +88,25 @@ func sendSingleWithPhoto(chatID int64, n models.PendingNotification) error {
 		htmlEscape(price),
 	)
 
-	msg := tgbotapi.NewPhoto(chatID, tgbotapi.FileURL(n.ImageURL))
+	resp, err := http.Get(n.ImageURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	photo := tgbotapi.FileReader{
+		Name:   "image.webp",
+		Reader: resp.Body,
+	}
+
+	msg := tgbotapi.NewPhoto(chatID, photo)
 	msg.Caption = caption
 	msg.ParseMode = tgbotapi.ModeHTML
 
 	log.Printf("Sending photo to %d: %s\n", chatID, n.ItemName)
 
-	if _, err := botAPI.Send(msg); err != nil {
-		return fmt.Errorf("telegram send photo error: %w", err)
-	}
-	return nil
+	_, err = botAPI.Send(msg)
+	return err
 }
 
 func sendCategoryListMessage(chatID int64, categoryName string, list []models.PendingNotification) error {

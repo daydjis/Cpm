@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -34,7 +33,6 @@ func HandleUpdates() {
 		if strings.HasPrefix(st, "filter_") {
 			parts := strings.SplitN(st, "_", 4) // filter_<subID>_<step>
 			if len(parts) >= 3 {
-				fmt.Println("UUUUUU")
 				if subID, err := strconv.Atoi(parts[1]); err == nil {
 					if handleFilterStep(chatID, subID, parts[2], text) {
 						continue
