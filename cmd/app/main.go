@@ -1,13 +1,6 @@
 package main
 
 import (
-	"context"
-	"log"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
-
 	"awesomeProject3/internal/bot"
 	"awesomeProject3/internal/config"
 	"awesomeProject3/internal/db"
@@ -17,6 +10,12 @@ import (
 	"awesomeProject3/internal/scheduler"
 	"awesomeProject3/internal/service"
 	"awesomeProject3/models"
+	"context"
+	"log"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 )
 
 func main() {
@@ -34,13 +33,18 @@ func run(ctx context.Context) error {
 
 	db.Init()
 	bot.Init()
+	// --- INIT DB ---
+	db.Init()
 
+	// --- INIT REPOS ---
 	userRepo := repository.NewUserRepository(db.DB)
 	categoryRepo := repository.NewCategoryRepository(db.DB)
 	subRepo := repository.NewSubscriptionRepository(db.DB)
 	notifRepo := repository.NewNotificationRepository(db.DB)
 
+	// --- SERVICES ---
 	svc := service.NewServicesFromRepos(userRepo, categoryRepo, subRepo, notifRepo)
+
 	bot.SetServices(svc)
 	bot.SetHandlersBot()
 
@@ -61,11 +65,12 @@ func run(ctx context.Context) error {
 		}()
 	}
 
+	// --- TELEGRAM WORKER ---
 	startWorker("telegram_bot", func(ctx context.Context) {
-
 		bot.HandleUpdates()
 	})
 
+	// --- SCHEDULER ---
 	job := func() {
 		subs, err := svc.Subscription.ListForScheduler()
 		if err != nil {
@@ -89,6 +94,7 @@ func run(ctx context.Context) error {
 				RegionID:   s.RegionID,
 				ProTypes:   filter.ParseProTypes(s.ProTypes),
 			}
+
 			urlStr := filter.BuildCategoryURL(baseURL, s.CategorySlug, p)
 
 			if _, ok := seen[urlStr]; ok {
@@ -113,10 +119,9 @@ func run(ctx context.Context) error {
 	log.Println("application started")
 
 	<-ctx.Done()
-	log.Println("shutting down, stopping bot and waiting workers...")
+	log.Println("shutting down...")
 
 	bot.Stop()
-
 	wg.Wait()
 
 	return nil

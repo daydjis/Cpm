@@ -14,7 +14,7 @@ func HandleUpdates() {
 		return
 	}
 	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
+	u.Timeout = 600
 	updates := botAPI.GetUpdatesChan(u)
 
 	for update := range updates {
